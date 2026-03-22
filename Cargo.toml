@@ -13,7 +13,7 @@ members = [
 default-members = ["voxelis", "voxelis-memory"]
 
 [workspace.package]
-version = "25.4.0"
+version = "25.5.0"
 authors = ["Artur Wyszyński <artur.wyszynski@wildpixelgames.com>"]
 edition = "2024"
 license = "MIT OR Apache-2.0"
@@ -41,7 +41,7 @@ categories = [
   "rendering",
   "simulation",
 ]
-rust-version = "1.88"
+rust-version = "1.89"
 
 [workspace.dependencies]
 voxelis = { path = "voxelis" }
@@ -50,11 +50,11 @@ voxelis-voxelize = { path = "voxelis-voxelize" }
 voxelis-bevy = { path = "voxelis-bevy" }
 
 ahash = "0.8"
-bitflags = "2.9"
+bitflags = "2.11"
 byteorder = "1.5"
 crossbeam = { version = "0.8" }
 fastnoise-lite = "1.1"
-glam = "0.29"
+glam = "0.32"
 humanize-bytes = "1.0"
 indicatif = { version = "0.18", features = ["improved_unicode"] }
 log = { version = "0.4", features = [
@@ -62,22 +62,22 @@ log = { version = "0.4", features = [
   "release_max_level_warn",
 ] }
 md-5 = "0.10"
-parking_lot = "0.12"
+parking_lot = "0.12.5"
 rand = { version = "0.9", features = ["small_rng"] }
-rayon = "1.10"
+rayon = "1.11"
 rustc-hash = "2.1"
 serde = "1.0"
 tracy-client = "0.18"
-wide = "0.7"
+wide = "1.2"
 zstd = "0.13"
 
 # Bevy & EGUI
-bevy = "0.16"
-bevy_egui = "0.35"
-bevy_panorbit_camera = { version = "0.27", features = ["bevy_egui"] }
+bevy = "0.18"
+bevy_egui = "0.39"
+bevy_panorbit_camera = { version = "0.34", features = ["bevy_egui"] }
 bevy_screen_diagnostics = "0.8"
-egui_extras = "0.32"
-egui_plot = "0.33"
+egui_extras = "0.33"
+egui_plot = "0.34"
 
 # Enable a small amount of optimization in debug mode
 # [profile.dev]

@@ -21,7 +21,9 @@
 
         # cargoToml = builtins.fromTOML (builtins.readFile ./Cargo.toml);
 
-        rust = pkgs.rust-bin.stable."1.88.0".default;
+        rust = pkgs.rust-bin.stable."1.89.0".default.override {
+          extensions = ["rust-src" "clippy"];
+        };
 
         runtimeDeps = with pkgs; [
         ];
