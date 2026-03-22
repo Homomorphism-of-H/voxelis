@@ -104,7 +104,7 @@ const PATH_MASKS: [[u32; MAX_ALLOWED_DEPTH - 1]; MAX_ALLOWED_DEPTH] = [
     ],
 ];
 
-/// VoxTree - a high performance, SVO DAG (Sparse Voxel Octree Directed Acyclic Graph) structure.
+/// `VoxTree` - a high performance, SVO DAG (Sparse Voxel Octree Directed Acyclic Graph) structure.
 pub struct VoxTree<T: VoxelTrait> {
     max_depth: MaxDepth,
     root_id: BlockId,
@@ -113,6 +113,7 @@ pub struct VoxTree<T: VoxelTrait> {
 }
 
 impl<T: VoxelTrait> VoxTree<T> {
+    #[must_use]
     pub fn new(max_depth: MaxDepth) -> Self {
         #[cfg(feature = "tracy")]
         let _span = tracy_client::span!("VoxTree::new");
@@ -125,6 +126,7 @@ impl<T: VoxelTrait> VoxTree<T> {
         }
     }
 
+    #[must_use]
     pub fn get_root_id(&self) -> BlockId {
         #[cfg(feature = "tracy")]
         let _span = tracy_client::span!("VoxTree::get_root_id");
@@ -511,7 +513,7 @@ fn set_at_depth_iterative<T: VoxelTrait>(
             }
 
             let types =
-                parent_node_id.types() | ((current_node_id.is_leaf() as u8) << parent_node_index);
+                parent_node_id.types() | (u8::from(current_node_id.is_leaf()) << parent_node_index);
 
             let mut branch = interner.get_children(&parent_node_id);
             branch[parent_node_index as usize] = current_node_id;
@@ -531,7 +533,7 @@ fn set_at_depth_iterative<T: VoxelTrait>(
 
             let mut children = EMPTY_CHILD;
             children[parent_node_index as usize] = current_node_id;
-            let types = (current_node_id.is_leaf() as u8) << parent_node_index;
+            let types = u8::from(current_node_id.is_leaf()) << parent_node_index;
             let mask = 1 << parent_node_index;
             current_node_id = interner.get_or_create_branch(children, types, mask);
         } else {
@@ -544,7 +546,7 @@ fn set_at_depth_iterative<T: VoxelTrait>(
             interner.inc_ref_by(&leaf_node_id, 7);
             children[parent_node_index as usize] = current_node_id;
             let types = !(1 << parent_node_index)
-                | ((current_node_id.is_leaf() as u8) << parent_node_index);
+                | (u8::from(current_node_id.is_leaf()) << parent_node_index);
             let mask = 0xFF;
             current_node_id = interner.get_or_create_branch(children, types, mask);
         }
@@ -689,8 +691,8 @@ fn remove_at_depth_leaf<T: VoxelTrait>(
 
         let is_leaf = new_node_id.is_leaf();
         let is_empty = new_node_id.is_empty();
-        let types = !(1 << index) | ((is_leaf as u8) << index);
-        let mask = !(1 << index) | ((!is_empty as u8) << index);
+        let types = !(1 << index) | (u8::from(is_leaf) << index);
+        let mask = !(1 << index) | (u8::from(!is_empty) << index);
 
         #[cfg(feature = "debug_trace_ref_counts")]
         println!("incrementing refs for node_id: {node_id:?}");
@@ -893,7 +895,7 @@ fn set_batch_at_depth_iterative<T: VoxelTrait>(
 
             current_level_data[path_index] = leaf_id;
             paths.push(path);
-        };
+        }
     }
 
     // Phase 2: Integrate dangling branches
@@ -949,7 +951,7 @@ fn set_batch_at_depth_iterative<T: VoxelTrait>(
         if equivalent_id.is_leaf() {
             leaf_id = equivalent_id;
             equivalent_id = BlockId::EMPTY;
-        };
+        }
 
         let mut children = EMPTY_CHILD;
         let mut types = 0;
@@ -981,7 +983,7 @@ fn set_batch_at_depth_iterative<T: VoxelTrait>(
             children[target_index] = current_level_id;
             current_level_data[current_path_index] = BlockId::INVALID;
 
-            types |= (current_level_id.is_leaf() as u8) << target_index;
+            types |= u8::from(current_level_id.is_leaf()) << target_index;
             mask |= 1 << target_index;
 
             #[cfg(feature = "debug_trace_ref_counts")]
@@ -1026,7 +1028,7 @@ fn set_batch_at_depth_iterative<T: VoxelTrait>(
 
                     children[idx] = existing_children[idx];
 
-                    types |= (children[idx].is_leaf() as u8) << idx;
+                    types |= u8::from(children[idx].is_leaf()) << idx;
                     mask |= 1 << idx;
                 }
             } else if !leaf_id.is_empty() {

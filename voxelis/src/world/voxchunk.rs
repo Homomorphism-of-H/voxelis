@@ -38,6 +38,7 @@ pub struct VoxChunk<T: VoxelTrait> {
 }
 
 impl<T: VoxelTrait> VoxChunk<T> {
+    #[must_use]
     pub fn with_position(chunk_size: f32, max_depth: MaxDepth, x: i32, y: i32, z: i32) -> Self {
         #[cfg(feature = "tracy")]
         let _span = tracy_client::span!("VoxChunk::with_position");
@@ -53,6 +54,7 @@ impl<T: VoxelTrait> VoxChunk<T> {
         self.position = IVec3::new(x, y, z);
     }
 
+    #[must_use]
     pub fn get_root_id(&self) -> BlockId {
         self.data.get_root_id()
     }
@@ -75,12 +77,12 @@ impl<T: VoxelTrait> VoxOpsWrite<T> for VoxChunk<T> {
 impl<T: VoxelTrait> VoxOpsBulkWrite<T> for VoxChunk<T> {
     #[inline(always)]
     fn fill(&mut self, interner: &mut VoxInterner<T>, value: T) {
-        self.data.fill(interner, value)
+        self.data.fill(interner, value);
     }
 
     #[inline(always)]
     fn clear(&mut self, interner: &mut VoxInterner<T>) {
-        self.data.clear(interner)
+        self.data.clear(interner);
     }
 }
 
@@ -133,7 +135,7 @@ impl<T: VoxelTrait> VoxOpsDirty for VoxChunk<T> {
 
     #[inline(always)]
     fn clear_dirty(&mut self) {
-        self.data.clear_dirty()
+        self.data.clear_dirty();
     }
 }
 

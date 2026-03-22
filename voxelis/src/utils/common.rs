@@ -3,6 +3,7 @@ use glam::IVec3;
 use crate::{BlockId, MaxDepth, TraversalDepth, VoxInterner, VoxelTrait};
 
 #[inline(always)]
+#[must_use]
 pub const fn child_index(position: &IVec3, depth: &TraversalDepth) -> usize {
     let shift = depth.max() - depth.current() - 1;
 
@@ -12,6 +13,7 @@ pub const fn child_index(position: &IVec3, depth: &TraversalDepth) -> usize {
 }
 
 #[inline(always)]
+#[must_use]
 pub const fn child_index2(position: &IVec3, current: usize, max: usize) -> usize {
     let shift = max - current - 1;
 
@@ -21,6 +23,7 @@ pub const fn child_index2(position: &IVec3, current: usize, max: usize) -> usize
 }
 
 #[inline(always)]
+#[must_use]
 pub const fn encode_child_index_path(position: &IVec3) -> u32 {
     const MASK_10_BITS: u32 = 0x000003FF; // Mask for lower 10 bits
     const MASK_1: u32 = 0x30000FF;
@@ -119,6 +122,7 @@ macro_rules! child_index_macro_2d {
 }
 
 #[inline(always)]
+#[must_use]
 pub fn get_at_depth<T: VoxelTrait>(
     interner: &VoxInterner<T>,
     mut node_id: BlockId,
@@ -138,9 +142,8 @@ pub fn get_at_depth<T: VoxelTrait>(
             let v = interner.get_value(&node_id);
             if v != &default_t {
                 return Some(*v);
-            } else {
-                return None;
             }
+            return None;
         }
 
         if node_id.is_branch() {
@@ -155,6 +158,7 @@ pub fn get_at_depth<T: VoxelTrait>(
     None
 }
 
+#[must_use]
 pub fn to_vec<T: VoxelTrait>(
     interner: &VoxInterner<T>,
     root_id: &BlockId,
@@ -163,7 +167,7 @@ pub fn to_vec<T: VoxelTrait>(
     #[cfg(feature = "tracy")]
     let _span = tracy_client::span!("to_vec");
 
-    let max_depth = max_depth.max() as u32;
+    let max_depth = u32::from(max_depth.max());
     let voxels_per_axis = 1 << max_depth;
     let size = voxels_per_axis * voxels_per_axis * voxels_per_axis;
 
@@ -316,17 +320,14 @@ fn collect_stats<T: VoxelTrait>(
     // Update max depth
     stats.max_depth_reached = stats.max_depth_reached.max(depth);
 
-    match node_id.is_leaf() {
-        true => {
-            stats.leaf_nodes += 1;
-        }
-        false => {
-            stats.branch_nodes += 1;
-            let children = interner.get_children(&node_id);
-            for child in children.iter() {
-                if !child.is_empty() {
-                    collect_stats(interner, *child, depth + 1, stats);
-                }
+    if node_id.is_leaf() {
+        stats.leaf_nodes += 1;
+    } else {
+        stats.branch_nodes += 1;
+        let children = interner.get_children(&node_id);
+        for child in &children {
+            if !child.is_empty() {
+                collect_stats(interner, *child, depth + 1, stats);
             }
         }
     }

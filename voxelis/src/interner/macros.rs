@@ -15,7 +15,7 @@ macro_rules! get_next_index_macro {
             }
 
             index
-        } else if $self.next_index < $self.capacity as u32 {
+        } else if ($self.next_index as usize) < $self.capacity {
             let index = $self.next_index;
 
             #[cfg(feature = "debug_trace_ref_counts")]

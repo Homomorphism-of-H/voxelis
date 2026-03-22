@@ -118,6 +118,7 @@ pub struct AxisOccupancy {
 }
 
 impl AxisOccupancy {
+    #[must_use]
     pub fn new(active: u64) -> Self {
         if active == 0 {
             Self {
@@ -266,7 +267,7 @@ impl OccupancyDataBuilder {
         let _span = tracy_client::span!("OccupancyDataBuilder::build");
 
         let mut materials = self.materials.into_iter().collect::<Vec<_>>();
-        materials.sort_by(|a, b| a.0.cmp(&b.0));
+        materials.sort_by_key(|a| a.0);
 
         let mut per_material = Vec::with_capacity(materials.len());
 
@@ -304,6 +305,7 @@ impl OccupancyDataBuilder {
 }
 
 #[inline(always)]
+#[must_use]
 pub const fn extract_plane_dir(external_plane: ExternalPlane) -> (Plane, Dir) {
     match external_plane {
         ExternalPlane::YZPos => (Plane::YZ, Dir::Pos),
@@ -537,7 +539,7 @@ pub fn generate_occupancy_masks<T: VoxelTrait>(
 
     let default_t = T::default();
 
-    let max_depth = max_depth.max() as u32;
+    let max_depth = u32::from(max_depth.max());
 
     if !root_id.is_branch() {
         let value = *interner.get_value(root_id);
@@ -750,7 +752,7 @@ pub fn generate_greedy_mesh_arrays(
                     // count how many faces we have for the material
                     material_count_opt_pos += material_mask_pos.count_ones() as usize;
 
-                    let mask_pos_active = (material_mask_pos != 0) as u64;
+                    let mask_pos_active = u64::from(material_mask_pos != 0);
                     active_row_pos |= mask_pos_active << row;
                     active_col_pos |= mask_pos_active << col;
 
@@ -767,7 +769,7 @@ pub fn generate_greedy_mesh_arrays(
                     // count how many faces we have for the material
                     material_count_opt_neg += material_mask_neg.count_ones() as usize;
 
-                    let mask_neg_active = (material_mask_neg != 0) as u64;
+                    let mask_neg_active = u64::from(material_mask_neg != 0);
                     active_row_neg |= mask_neg_active << row;
                     active_col_neg |= mask_neg_active << col;
                 }

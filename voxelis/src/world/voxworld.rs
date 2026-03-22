@@ -12,6 +12,7 @@ pub struct VoxWorld<T: VoxelTrait> {
 }
 
 impl<T: VoxelTrait> VoxWorld<T> {
+    #[must_use]
     pub fn new() -> Self {
         #[cfg(feature = "tracy")]
         let _span = tracy_client::span!("VoxWorld::new");
@@ -27,6 +28,7 @@ impl<T: VoxelTrait> VoxWorld<T> {
         }
     }
 
+    #[must_use]
     pub fn with_size(size: IVec3) -> Self {
         #[cfg(feature = "tracy")]
         let _span = tracy_client::span!("VoxWorld::with_size");

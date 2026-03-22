@@ -293,7 +293,7 @@ pub fn generate_terrain_batch(
                 (offset.x + (x as f32 * voxel_size)) * scale,
                 (offset.z + (z as f32 * voxel_size)) * scale,
             );
-            let noise_value = (noise_value + 1.0) / 2.0;
+            let noise_value = f32::midpoint(noise_value, 1.0);
             let y = noise_value * voxels_per_axis as f32;
             let y = y as u32;
 
@@ -334,7 +334,7 @@ pub fn generate_terrain_batch_3_mats(
                 (offset.x + (x as f32 * voxel_size)) * scale,
                 (offset.z + (z as f32 * voxel_size)) * scale,
             );
-            let noise_value = (noise_value + 1.0) / 2.0;
+            let noise_value = f32::midpoint(noise_value, 1.0);
             let y = noise_value * voxels_per_axis as f32;
             let y = y as u32;
 
@@ -403,7 +403,7 @@ pub fn generate_perlin_3d_batch(
                     (offset.y + (y as f32 * voxel_size)) * scale,
                     (offset.z + (z as f32 * voxel_size)) * scale,
                 );
-                let noise_value = (noise_value + 1.0) / 2.0;
+                let noise_value = f32::midpoint(noise_value, 1.0);
                 if noise_value >= threshold {
                     batch.just_set(IVec3::new(x, y, z), 1);
                 }

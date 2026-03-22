@@ -6,6 +6,10 @@
 #![warn(clippy::cargo)]
 #![allow(clippy::needless_range_loop)]
 #![allow(clippy::if_not_else)]
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::type_complexity)]
+#![allow(clippy::inline_always)]
+// #![deny(clippy::unwrap_used)]
 
 pub mod core;
 pub mod interner;

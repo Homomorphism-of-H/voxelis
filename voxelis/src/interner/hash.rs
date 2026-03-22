@@ -43,7 +43,7 @@ pub fn compute_empty_branch_hash() -> u64 {
 
     // Hash branch tag and child presence
     hasher.write_u8(NODE_TYPE_BRANCH);
-    for _ in EMPTY_CHILD.iter() {
+    for _ in &EMPTY_CHILD {
         hasher.write_u8(CHILD_ABSENT);
     }
 
@@ -71,9 +71,9 @@ pub fn compute_branch_hash_for_children(children: &Children, types: u8, mask: u8
 
     // Hash branch tag and child hashes
     hasher.write_u8(NODE_TYPE_BRANCH);
-    hasher.write_u16(((types as u16) << 8) | mask as u16);
+    hasher.write_u16((u16::from(types) << 8) | u16::from(mask));
 
-    for child_id in children.iter() {
+    for child_id in children {
         child_id.raw().hash(&mut hasher);
     }
 

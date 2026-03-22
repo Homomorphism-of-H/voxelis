@@ -42,6 +42,7 @@ pub struct VoxInterner<T> {
 impl<T: VoxelTrait> VoxInterner<T> {
     const INITIAL_CAPACITY: usize = 16384; // 43ms
 
+    #[must_use]
     pub fn with_memory_budget(requested_budget: usize) -> Self {
         #[cfg(feature = "tracy")]
         let _span = tracy_client::span!("VoxInterner::with_memory_budget");
@@ -63,7 +64,7 @@ impl<T: VoxelTrait> VoxInterner<T> {
         assert!(nodes_capacity > 0, "Requested budget is too small");
         assert!(actual_budget > 0, "Requested budget is too small");
         assert!(
-            nodes_capacity <= u32::MAX as usize,
+            u32::try_from(nodes_capacity).is_ok(),
             "Requested budget is too large"
         );
 
@@ -155,6 +156,7 @@ impl<T: VoxelTrait> VoxInterner<T> {
     }
 
     #[inline(always)]
+    #[must_use]
     pub const fn node_size() -> usize {
         PoolAllocatorLite::<u32>::block_size() + // ref_count
         PoolAllocatorLite::<u16>::block_size() + // generation
@@ -164,6 +166,7 @@ impl<T: VoxelTrait> VoxInterner<T> {
     }
 
     #[inline(always)]
+    #[must_use]
     pub fn get_value(&self, block_id: &BlockId) -> &T {
         debug_assert!(
             self.is_valid_block_id(block_id),
@@ -177,8 +180,9 @@ impl<T: VoxelTrait> VoxInterner<T> {
     }
 
     #[inline(always)]
+    #[must_use]
     pub fn get_children(&self, block_id: &BlockId) -> Children {
-        debug_assert!(block_id.is_branch(), "Cannot get children for value node",);
+        debug_assert!(block_id.is_branch(), "Cannot get children for value node");
         debug_assert!(
             self.is_valid_block_id(block_id),
             "Invalid block id: {block_id:?}"
@@ -191,8 +195,9 @@ impl<T: VoxelTrait> VoxInterner<T> {
     }
 
     #[inline(always)]
+    #[must_use]
     pub fn get_children_ref(&self, block_id: &BlockId) -> &Children {
-        debug_assert!(block_id.is_branch(), "Cannot get children for value node",);
+        debug_assert!(block_id.is_branch(), "Cannot get children for value node");
         debug_assert!(
             self.is_valid_block_id(block_id),
             "Invalid block id: {block_id:?}"
@@ -205,8 +210,9 @@ impl<T: VoxelTrait> VoxInterner<T> {
     }
 
     #[inline(always)]
+    #[must_use]
     pub fn get_child_id(&self, block_id: &BlockId, index: usize) -> BlockId {
-        debug_assert!(block_id.is_branch(), "Cannot get children for value node",);
+        debug_assert!(block_id.is_branch(), "Cannot get children for value node");
         debug_assert!(
             self.is_valid_block_id(block_id),
             "Invalid block id: {block_id:?}"
@@ -219,6 +225,7 @@ impl<T: VoxelTrait> VoxInterner<T> {
     }
 
     #[inline(always)]
+    #[must_use]
     pub fn get_ref(&self, block_id: &BlockId) -> u32 {
         debug_assert!(
             self.is_valid_block_id(block_id),
@@ -280,7 +287,7 @@ impl<T: VoxelTrait> VoxInterner<T> {
         *ref_count -= 1;
 
         if *ref_count == 0 {
-            self.patterns[block_id.is_leaf() as usize].remove(self.hashes.get(block_index));
+            self.patterns[usize::from(block_id.is_leaf())].remove(self.hashes.get(block_index));
 
             #[cfg(feature = "memory_stats")]
             {
@@ -335,7 +342,7 @@ impl<T: VoxelTrait> VoxInterner<T> {
         #[cfg(feature = "debug_trace_ref_counts")]
         let mut i = 0;
 
-        for child_id in children.iter() {
+        for child_id in children {
             if !child_id.is_empty() {
                 #[cfg(feature = "debug_trace_ref_counts")]
                 let current_ref_count = self.get_ref(child_id);
@@ -398,14 +405,14 @@ impl<T: VoxelTrait> VoxInterner<T> {
         let ref_count = self.ref_counts.get_mut(block_index);
 
         debug_assert!(
-            ((*ref_count as i64) + count as i64) >= 0,
+            (i64::from(*ref_count) + i64::from(count)) >= 0,
             "Ref count should be greater or equal than zero, id: {block_id:?}"
         );
 
         *ref_count -= count;
 
         if *ref_count == 0 {
-            self.patterns[block_id.is_leaf() as usize].remove(self.hashes.get(block_index));
+            self.patterns[usize::from(block_id.is_leaf())].remove(self.hashes.get(block_index));
 
             #[cfg(feature = "memory_stats")]
             {
@@ -515,7 +522,8 @@ impl<T: VoxelTrait> VoxInterner<T> {
                     }
                 }
 
-                self.patterns[current_id.is_leaf() as usize].remove(self.hashes.get(current_index));
+                self.patterns[usize::from(current_id.is_leaf())]
+                    .remove(self.hashes.get(current_index));
 
                 #[cfg(feature = "memory_stats")]
                 {
@@ -556,7 +564,7 @@ impl<T: VoxelTrait> VoxInterner<T> {
         let _span = tracy_client::span!("VoxInterner::dec_child_refs");
 
         #[cfg(not(feature = "debug_trace_ref_counts"))]
-        for child_id in children.iter() {
+        for child_id in children {
             if !child_id.is_empty() {
                 self.dec_ref(child_id);
             }
@@ -613,8 +621,8 @@ impl<T: VoxelTrait> VoxInterner<T> {
             self.stats.total_deallocations += 1;
             self.stats.recycled_nodes += 1;
             let is_leaf = block_id.is_leaf();
-            self.stats.leaf_nodes -= is_leaf as usize;
-            self.stats.branch_nodes -= (!is_leaf) as usize;
+            self.stats.leaf_nodes -= usize::from(is_leaf);
+            self.stats.branch_nodes -= usize::from(!is_leaf);
             if self.stats.alive_nodes > 1 {
                 debug_assert!(self.stats.leaf_nodes > 0);
             }
@@ -712,6 +720,7 @@ impl<T: VoxelTrait> VoxInterner<T> {
     /// All non-empty blocks inside `children` must have bumped ref counts:
     /// - if there is no branch, ref counts will be kept
     /// - if there is a branch, ref counts will be decremented, and branch ref count will be bumped
+    ///
     /// There is no other way, since we can't act like Arc without access to interner
     pub fn get_or_create_branch(&mut self, children: Children, types: u8, mask: u8) -> BlockId {
         #[cfg(feature = "tracy")]
@@ -994,6 +1003,7 @@ impl<T: VoxelTrait> VoxInterner<T> {
 
     #[inline(always)]
     #[cfg(debug_assertions)]
+    #[must_use]
     pub fn is_valid_block_id(&self, block_id: &BlockId) -> bool {
         *self.generations.get(block_id.index()) == block_id.generation()
             && !self.free_indices.contains(&block_id.index())
@@ -1008,7 +1018,7 @@ impl<T: VoxelTrait> VoxInterner<T> {
     }
 
     pub fn ensure_valid_children(&self, children: &Children) {
-        for child_id in children.iter() {
+        for child_id in children {
             if !child_id.is_empty() {
                 assert!(
                     self.is_valid_block_id(child_id),
@@ -1019,19 +1029,23 @@ impl<T: VoxelTrait> VoxInterner<T> {
     }
 
     #[inline]
+    #[must_use]
     pub const fn capacity(&self) -> usize {
         self.capacity
     }
 
+    #[must_use]
     pub fn patterns_empty(&self) -> bool {
         self.patterns[PATTERNS_TYPE_BRANCH].len() == 1
             && self.patterns[PATTERNS_TYPE_LEAF].is_empty()
     }
 
+    #[must_use]
     pub fn leaf_patterns(&self) -> &PatternsHashmap {
         &self.patterns[PATTERNS_TYPE_LEAF]
     }
 
+    #[must_use]
     pub fn branch_patterns(&self) -> &PatternsHashmap {
         &self.patterns[PATTERNS_TYPE_BRANCH]
     }
@@ -1043,21 +1057,20 @@ impl<T: VoxelTrait> VoxInterner<T> {
 
     pub fn dump_patterns(&self) {
         println!("=== Leaf Patterns ===");
-        for (hash, id) in self.patterns[PATTERNS_TYPE_LEAF].iter() {
+        for (hash, id) in &self.patterns[PATTERNS_TYPE_LEAF] {
             println!("{hash:X} -> {id:?}");
             self.dump_node(*id, 0, "  ");
         }
         println!("=== End of Patterns ===\n");
 
         println!("=== Branch Patterns ===");
-        for (hash, id) in self.patterns[PATTERNS_TYPE_BRANCH].iter() {
+        for (hash, id) in &self.patterns[PATTERNS_TYPE_BRANCH] {
             if *hash == self.empty_branch_hash {
                 println!("{hash:X} -> EMPTY");
                 continue;
-            } else {
-                println!("{hash:X} -> {id:?}");
-                self.dump_node(*id, 0, "  ");
             }
+            println!("{hash:X} -> {id:?}");
+            self.dump_node(*id, 0, "  ");
         }
         println!("=== End of Patterns ===\n");
     }
@@ -1067,6 +1080,7 @@ impl<T: VoxelTrait> VoxInterner<T> {
         println!("{prefix}Discovered nodes: {discovered_nodes}");
     }
 
+    #[must_use]
     pub fn count_nodes(&self, node_id: BlockId) -> u32 {
         self.count_nodes_internal(node_id)
     }
@@ -1079,7 +1093,7 @@ impl<T: VoxelTrait> VoxInterner<T> {
         let mut discovered_nodes = 1;
 
         if !node_id.is_leaf() {
-            for child_id in self.get_children_ref(&node_id).iter() {
+            for child_id in self.get_children_ref(&node_id) {
                 if !child_id.is_empty() {
                     discovered_nodes += self.count_nodes_internal(*child_id);
                 }
@@ -1089,17 +1103,16 @@ impl<T: VoxelTrait> VoxInterner<T> {
         discovered_nodes
     }
 
+    #[must_use]
     pub fn dump_node_internal(&self, node_id: BlockId, depth: u8, prefix: &str) -> u32 {
-        let current_prefix = prefix.repeat((depth + 1) as usize).to_string();
+        let current_prefix = prefix.repeat((depth + 1) as usize).clone();
 
         if !self.is_valid_block_id(&node_id) {
             println!("{current_prefix}Invalid block id: {node_id:?}");
             return 0;
         }
 
-        if depth > MAX_ALLOWED_DEPTH as u8 {
-            panic!("{current_prefix}Max depth reached");
-        }
+        assert!(depth <= MAX_ALLOWED_DEPTH as u8, "{current_prefix}Max depth reached");
 
         let mut discovered_nodes = 1;
 

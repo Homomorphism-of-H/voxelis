@@ -264,8 +264,8 @@ impl<T: VoxelTrait> VoxModel<T> {
 
         let chunks_data: Vec<Vec<u8>> = self
             .chunks
-            .iter() // .par_iter() needs Send + Sync for VoxelTrait
-            .map(|(_, chunk)| {
+            .values()
+            .map(|chunk| {
                 let mut buffer = Vec::with_capacity(BUFFER_SIZE);
                 serialize_chunk(chunk, &id_map, &mut buffer);
                 buffer
